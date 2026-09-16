@@ -1,0 +1,22 @@
+[package]
+name = "starkom-koalabear"
+version = "1.0.0"
+description = "Starkom's implementation of the KoalaBear field."
+license = "Apache-2.0"
+repository = "https://github.com/libernet-xyz/koalabear.git"
+readme = "README.md"
+edition = "2024"
+
+[package.metadata.docs.rs]
+all-features = true
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+anyhow = "1.0.104"
+getrandom = "0.4.3"
+primitive-types = "0.14.0"
+rand_core = "0.10.1"
+starkom-ff = "3.4.0"
+subtle = "2.6.1"
