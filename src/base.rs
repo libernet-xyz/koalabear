@@ -1,6 +1,6 @@
 use crate::helpers::{
     CHARACTERS_LOWER_CASE, CHARACTERS_UPPER_CASE, MODULUS, kb_add, kb_from_montgomery, kb_mul,
-    kb_sub, kb_to_montgomery,
+    kb_mul2x1, kb_mul4x1, kb_mul8x1, kb_sub, kb_to_montgomery,
 };
 use crate::kb2;
 use crate::kb4;
@@ -301,7 +301,8 @@ impl Mul<kb2::Scalar> for Scalar {
     type Output = kb2::Scalar;
 
     fn mul(self, rhs: kb2::Scalar) -> Self::Output {
-        kb2::Scalar(kb_mul(self.0, rhs.0), kb_mul(self.0, rhs.1))
+        let [c0, c1] = kb_mul2x1([rhs.0, rhs.1], self.0);
+        kb2::Scalar(c0, c1)
     }
 }
 
@@ -317,12 +318,8 @@ impl Mul<kb4::Scalar> for Scalar {
     type Output = kb4::Scalar;
 
     fn mul(self, rhs: kb4::Scalar) -> Self::Output {
-        kb4::Scalar(
-            kb_mul(self.0, rhs.0),
-            kb_mul(self.0, rhs.1),
-            kb_mul(self.0, rhs.2),
-            kb_mul(self.0, rhs.3),
-        )
+        let [c0, c1, c2, c3] = kb_mul4x1([rhs.0, rhs.1, rhs.2, rhs.3], self.0);
+        kb4::Scalar(c0, c1, c2, c3)
     }
 }
 
@@ -338,16 +335,11 @@ impl Mul<kb8::Scalar> for Scalar {
     type Output = kb8::Scalar;
 
     fn mul(self, rhs: kb8::Scalar) -> Self::Output {
-        kb8::Scalar(
-            kb_mul(self.0, rhs.0),
-            kb_mul(self.0, rhs.1),
-            kb_mul(self.0, rhs.2),
-            kb_mul(self.0, rhs.3),
-            kb_mul(self.0, rhs.4),
-            kb_mul(self.0, rhs.5),
-            kb_mul(self.0, rhs.6),
-            kb_mul(self.0, rhs.7),
-        )
+        let [c0, c1, c2, c3, c4, c5, c6, c7] = kb_mul8x1(
+            [rhs.0, rhs.1, rhs.2, rhs.3, rhs.4, rhs.5, rhs.6, rhs.7],
+            self.0,
+        );
+        kb8::Scalar(c0, c1, c2, c3, c4, c5, c6, c7)
     }
 }
 
@@ -391,8 +383,7 @@ impl Div<kb2::Scalar> for Scalar {
     type Output = kb2::Scalar;
 
     fn div(self, rhs: kb2::Scalar) -> Self::Output {
-        let inverse = rhs.invert_unwrap();
-        kb2::Scalar(kb_mul(self.0, inverse.0), kb_mul(self.0, inverse.1))
+        self * rhs.invert_unwrap()
     }
 }
 
@@ -408,13 +399,7 @@ impl Div<kb4::Scalar> for Scalar {
     type Output = kb4::Scalar;
 
     fn div(self, rhs: kb4::Scalar) -> Self::Output {
-        let inverse = rhs.invert_unwrap();
-        kb4::Scalar(
-            kb_mul(self.0, inverse.0),
-            kb_mul(self.0, inverse.1),
-            kb_mul(self.0, inverse.2),
-            kb_mul(self.0, inverse.3),
-        )
+        self * rhs.invert_unwrap()
     }
 }
 

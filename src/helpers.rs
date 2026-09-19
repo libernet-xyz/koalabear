@@ -97,11 +97,12 @@ pub(crate) const fn kb_from_montgomery(value: u32) -> u32 {
 /// implementation and as the reference the SIMD ones are tested against.
 #[allow(dead_code)]
 mod scalar {
-    use super::{QUADRATIC_NON_RESIDUE, kb_add, kb_reduce, kb_reduce_wide, kb_sub};
+    use super::{QUADRATIC_NON_RESIDUE, kb_add, kb_mul, kb_reduce, kb_reduce_wide, kb_sub};
 
     /// Adds two KoalaBear^2 scalars.
     ///
     /// All coefficients are in big-endian order.
+    #[inline]
     pub(crate) const fn kb_add2(lhs: [u32; 2], rhs: [u32; 2]) -> [u32; 2] {
         let [a0, a1] = lhs;
         let [b0, b1] = rhs;
@@ -113,6 +114,7 @@ mod scalar {
     /// Subtracts a KoalaBear^2 scalar from another.
     ///
     /// All coefficients are in big-endian order.
+    #[inline]
     pub(crate) const fn kb_sub2(lhs: [u32; 2], rhs: [u32; 2]) -> [u32; 2] {
         let [a0, a1] = lhs;
         let [b0, b1] = rhs;
@@ -130,6 +132,7 @@ mod scalar {
     /// where `X^2` equals [`QUADRATIC_NON_RESIDUE`].
     ///
     /// All coefficients are in big-endian order.
+    #[inline]
     pub(crate) const fn kb_mul2(lhs: [u32; 2], rhs: [u32; 2]) -> [u32; 2] {
         const { assert!(QUADRATIC_NON_RESIDUE == 3) }
         let [a0, a1] = lhs;
@@ -141,9 +144,21 @@ mod scalar {
         [c0, c1]
     }
 
+    /// Multiplies a KoalaBear^2 scalar by a KoalaBear scalar.
+    ///
+    /// All coefficients are in big-endian order.
+    #[inline]
+    pub(crate) const fn kb_mul2x1(lhs: [u32; 2], rhs: u32) -> [u32; 2] {
+        let [a0, a1] = lhs;
+        let c0 = kb_mul(a0, rhs);
+        let c1 = kb_mul(a1, rhs);
+        [c0, c1]
+    }
+
     /// Adds two KoalaBear^4 scalars.
     ///
     /// All coefficients are in big-endian order.
+    #[inline]
     pub(crate) const fn kb_add4(lhs: [u32; 4], rhs: [u32; 4]) -> [u32; 4] {
         let [a0, a1, a2, a3] = lhs;
         let [b0, b1, b2, b3] = rhs;
@@ -157,6 +172,7 @@ mod scalar {
     /// Subtracts a KoalaBear^4 scalar from another.
     ///
     /// All coefficients are in big-endian order.
+    #[inline]
     pub(crate) const fn kb_sub4(lhs: [u32; 4], rhs: [u32; 4]) -> [u32; 4] {
         let [a0, a1, a2, a3] = lhs;
         let [b0, b1, b2, b3] = rhs;
@@ -177,6 +193,7 @@ mod scalar {
     /// where `X^2` and `Y^4` equal [`QUADRATIC_NON_RESIDUE`].
     ///
     /// All coefficients are in big-endian order.
+    #[inline]
     pub(crate) const fn kb_mul4(lhs: [u32; 4], rhs: [u32; 4]) -> [u32; 4] {
         const { assert!(QUADRATIC_NON_RESIDUE == 3) }
         let [a0, a1, a2, a3] = lhs;
@@ -194,9 +211,23 @@ mod scalar {
         [c0, c1, c2, c3]
     }
 
+    /// Multiplies a KoalaBear^4 scalar by a KoalaBear scalar.
+    ///
+    /// All coefficients are in big-endian order.
+    #[inline]
+    pub(crate) const fn kb_mul4x1(lhs: [u32; 4], rhs: u32) -> [u32; 4] {
+        let [a0, a1, a2, a3] = lhs;
+        let c0 = kb_mul(a0, rhs);
+        let c1 = kb_mul(a1, rhs);
+        let c2 = kb_mul(a2, rhs);
+        let c3 = kb_mul(a3, rhs);
+        [c0, c1, c2, c3]
+    }
+
     /// Adds two KoalaBear^8 scalars.
     ///
     /// All coefficients are in big-endian order.
+    #[inline]
     pub(crate) const fn kb_add8(lhs: [u32; 8], rhs: [u32; 8]) -> [u32; 8] {
         let [a0, a1, a2, a3, a4, a5, a6, a7] = lhs;
         let [b0, b1, b2, b3, b4, b5, b6, b7] = rhs;
@@ -214,6 +245,7 @@ mod scalar {
     /// Subtracts a KoalaBear^8 scalar from another.
     ///
     /// All coefficients are in big-endian order.
+    #[inline]
     pub(crate) const fn kb_sub8(lhs: [u32; 8], rhs: [u32; 8]) -> [u32; 8] {
         let [a0, a1, a2, a3, a4, a5, a6, a7] = lhs;
         let [b0, b1, b2, b3, b4, b5, b6, b7] = rhs;
@@ -233,6 +265,7 @@ mod scalar {
     /// Multiplication is defined over KoalaBear^4 using the tower construction.
     ///
     /// All coefficients are in big-endian order.
+    #[inline]
     pub(crate) const fn kb_mul8(lhs: [u32; 8], rhs: [u32; 8]) -> [u32; 8] {
         const { assert!(QUADRATIC_NON_RESIDUE == 3) }
         let [a0, a1, a2, a3, a4, a5, a6, a7] = lhs;
@@ -247,6 +280,23 @@ mod scalar {
         let acy = [ac2, ac3, ac1, kb_add(kb_add(ac0, ac0), ac0)];
         let [c0, c1, c2, c3] = kb_sub4(kb_sub4(s, ac), bd);
         let [c4, c5, c6, c7] = kb_add4(bd, acy);
+        [c0, c1, c2, c3, c4, c5, c6, c7]
+    }
+
+    /// Multiplies a KoalaBear^8 scalar by a KoalaBear scalar.
+    ///
+    /// All coefficients are in big-endian order.
+    #[inline]
+    pub(crate) const fn kb_mul8x1(lhs: [u32; 8], rhs: u32) -> [u32; 8] {
+        let [a0, a1, a2, a3, a4, a5, a6, a7] = lhs;
+        let c0 = kb_mul(a0, rhs);
+        let c1 = kb_mul(a1, rhs);
+        let c2 = kb_mul(a2, rhs);
+        let c3 = kb_mul(a3, rhs);
+        let c4 = kb_mul(a4, rhs);
+        let c5 = kb_mul(a5, rhs);
+        let c6 = kb_mul(a6, rhs);
+        let c7 = kb_mul(a7, rhs);
         [c0, c1, c2, c3, c4, c5, c6, c7]
     }
 }
@@ -266,6 +316,7 @@ mod x86_64 {
     /// signed integer its sign bit is exactly the borrow, which is broadcast to the whole lane to
     /// mask `modulus`. This is written as a subtraction from `value` rather than an addition to the
     /// difference so that LLVM doesn't rewrite it into a select, which costs an instruction more.
+    #[inline]
     fn subtract_modulus(value: __m128i, modulus: __m128i) -> __m128i {
         // SAFETY: SSE2 is part of the x86-64 baseline, so the intrinsics are always available.
         unsafe {
@@ -276,6 +327,7 @@ mod x86_64 {
 
     /// Adds `lhs` and `rhs` lane by lane: each sum is lower than `2 * MODULUS`, so a single
     /// [`subtract_modulus`] reduces it.
+    #[inline]
     fn add(lhs: __m128i, rhs: __m128i) -> __m128i {
         // SAFETY: SSE2 is part of the x86-64 baseline, so the intrinsics are always available.
         unsafe { subtract_modulus(_mm_add_epi32(lhs, rhs), _mm_set1_epi32(MODULUS as i32)) }
@@ -285,6 +337,7 @@ mod x86_64 {
     /// `2^32 - MODULUS`, which is beyond `2^31` since `MODULUS < 2^31`, while one that does not is
     /// lower than `MODULUS < 2^31`: the borrow is exactly the sign bit of the difference, and
     /// `MODULUS` is added back where it is set.
+    #[inline]
     fn sub(lhs: __m128i, rhs: __m128i) -> __m128i {
         // SAFETY: SSE2 is part of the x86-64 baseline, so the intrinsics are always available.
         unsafe {
@@ -303,6 +356,7 @@ mod x86_64 {
     /// corrected by subtracting `MODULUS` once where the value is at least `MODULUS / 3` and once
     /// more where it is at least `2 * MODULUS / 3`, with signed comparisons since every value
     /// involved is lower than `2^31`. This costs two instructions less than two modular additions.
+    #[inline]
     fn triple(value: __m128i) -> __m128i {
         const { assert!(QUADRATIC_NON_RESIDUE == 3) }
         const ONCE_THRESHOLD: i32 = MODULUS.div_ceil(3) as i32 - 1;
@@ -321,21 +375,33 @@ mod x86_64 {
     }
 
     /// Montgomery-reduces both 64-bit lanes of `sum`, each of which must be lower than
-    /// `MODULUS * 2^32`, leaving the results in the low 32-bit halves of the lanes (ie. 32-bit
-    /// lanes 0 and 2) with zeroed high halves.
+    /// `MODULUS * 2^32`, leaving results lower than `2 * MODULUS` (rather than `MODULUS`) in the
+    /// low 32-bit halves of the lanes (ie. 32-bit lanes 0 and 2) with zeroed high halves.
     ///
     /// `_mm_mul_epu32` only reads the low 32 bits of each 64-bit lane, which is exactly what both
     /// steps of the reduction need: the low word of `sum` to derive the factor, then the factor
-    /// itself. The result of the reduction is lower than `2 * MODULUS`, so a single
-    /// [`subtract_modulus`] reduces it; on the zeroed high halves it is a no-op.
-    fn reduce(sum: __m128i) -> __m128i {
+    /// itself. The final conditional subtraction is left to the caller so that the results of
+    /// several reductions can be gathered into one register and corrected all at once.
+    #[inline]
+    fn reduce_partially(sum: __m128i) -> __m128i {
         // SAFETY: SSE2 is part of the x86-64 baseline, so the intrinsics are always available.
         unsafe {
-            let modulus = _mm_set1_epi32(MODULUS as i32);
             let factor = _mm_mul_epu32(sum, _mm_set1_epi32(P_INV as i32));
-            let reduced = _mm_srli_epi64::<32>(_mm_add_epi64(sum, _mm_mul_epu32(factor, modulus)));
-            subtract_modulus(reduced, modulus)
+            let product = _mm_mul_epu32(factor, _mm_set1_epi32(MODULUS as i32));
+            _mm_srli_epi64::<32>(_mm_add_epi64(sum, product))
         }
+    }
+
+    /// Montgomery-reduces both 64-bit lanes of `sum`, each of which must be lower than
+    /// `MODULUS * 2^32`, leaving the results in the low 32-bit halves of the lanes (ie. 32-bit
+    /// lanes 0 and 2) with zeroed high halves.
+    ///
+    /// This is [`reduce_partially`] followed by the single [`subtract_modulus`] its results need;
+    /// on the zeroed high halves it is a no-op.
+    #[inline]
+    fn reduce(sum: __m128i) -> __m128i {
+        // SAFETY: SSE2 is part of the x86-64 baseline, so the intrinsics are always available.
+        unsafe { subtract_modulus(reduce_partially(sum), _mm_set1_epi32(MODULUS as i32)) }
     }
 
     /// Montgomery-reduces both 64-bit lanes of `sum`, each of which must be lower than
@@ -345,6 +411,7 @@ mod x86_64 {
     /// This is [`super::kb_reduce_wide`] lane by lane: `MODULUS` is subtracted from every high word
     /// that is not lower than it, ie. `MODULUS * 2^32` from the 64-bit lane, which doesn't change
     /// its residue and brings it into the domain of [`reduce`].
+    #[inline]
     fn reduce_wide(sum: __m128i) -> __m128i {
         // SAFETY: SSE2 is part of the x86-64 baseline, so the intrinsics are always available.
         unsafe {
@@ -355,6 +422,7 @@ mod x86_64 {
 
     /// SSE2 version of [`super::scalar::kb_add2`]: the two coefficients are added in 32-bit lanes 0
     /// and 1 by [`add`].
+    #[inline]
     pub(crate) fn kb_add2(lhs: [u32; 2], rhs: [u32; 2]) -> [u32; 2] {
         // SAFETY: SSE2 is part of the x86-64 baseline, so the intrinsics are always available, and
         // `_mm_loadl_epi64` reads 8 bytes, the size of the arrays, with no alignment requirement.
@@ -372,6 +440,7 @@ mod x86_64 {
 
     /// SSE2 version of [`super::scalar::kb_sub2`]: the two coefficients are subtracted in 32-bit
     /// lanes 0 and 1 by [`sub`].
+    #[inline]
     pub(crate) fn kb_sub2(lhs: [u32; 2], rhs: [u32; 2]) -> [u32; 2] {
         // SAFETY: SSE2 is part of the x86-64 baseline, so the intrinsics are always available, and
         // `_mm_loadl_epi64` reads 8 bytes, the size of the arrays, with no alignment requirement.
@@ -395,6 +464,7 @@ mod x86_64 {
     /// `QUADRATIC_NON_RESIDUE` is alone in its lane of the first pair, where it's scaled with a
     /// shift and a masked addition; one 64-bit addition then yields both sums, and both are reduced
     /// at once.
+    #[inline]
     pub(crate) fn kb_mul2(lhs: [u32; 2], rhs: [u32; 2]) -> [u32; 2] {
         const { assert!(QUADRATIC_NON_RESIDUE == 3) }
         // SAFETY: SSE2 is part of the x86-64 baseline, so the intrinsics are always available, and
@@ -423,8 +493,26 @@ mod x86_64 {
         }
     }
 
+    /// SSE2 version of [`super::scalar::kb_mul2x1`]: the two coefficients are spread to lanes 0
+    /// and 2, multiplied by `rhs` in a single `_mm_mul_epu32`, and reduced at once.
+    #[inline]
+    pub(crate) fn kb_mul2x1(lhs: [u32; 2], rhs: u32) -> [u32; 2] {
+        // SAFETY: SSE2 is part of the x86-64 baseline, so the intrinsics are always available, and
+        // `_mm_loadl_epi64` reads 8 bytes, the size of the array, with no alignment requirement.
+        unsafe {
+            // (a0, ., a1, .) (the immediate is given most significant lane first).
+            let lhs = _mm_shuffle_epi32::<0b01_01_00_00>(_mm_loadl_epi64(lhs.as_ptr().cast()));
+            let reduced = reduce(_mm_mul_epu32(lhs, _mm_set1_epi32(rhs as i32)));
+            let packed = _mm_cvtsi128_si64(_mm_shuffle_epi32::<0b00_00_10_00>(reduced)) as u64;
+            let c0 = packed as u32;
+            let c1 = (packed >> 32) as u32;
+            [c0, c1]
+        }
+    }
+
     /// SSE2 version of [`super::scalar::kb_add4`]: the four coefficients occupy a full 128-bit
     /// register, one per lane, so this is a single [`add`].
+    #[inline]
     pub(crate) fn kb_add4(lhs: [u32; 4], rhs: [u32; 4]) -> [u32; 4] {
         // SAFETY: SSE2 is part of the x86-64 baseline, so the intrinsics are always available, and
         // the arrays are 16 bytes, the size of a `__m128i`, while the unaligned load and store have
@@ -442,6 +530,7 @@ mod x86_64 {
 
     /// SSE2 version of [`super::scalar::kb_sub4`]: the four coefficients occupy a full 128-bit
     /// register, one per lane, so this is a single [`sub`].
+    #[inline]
     pub(crate) fn kb_sub4(lhs: [u32; 4], rhs: [u32; 4]) -> [u32; 4] {
         // SAFETY: SSE2 is part of the x86-64 baseline, so the intrinsics are always available, and
         // the arrays are 16 bytes, the size of a `__m128i`, while the unaligned load and store
@@ -470,6 +559,7 @@ mod x86_64 {
     /// shuffle of `plain`, `tripled` or `rhs`: the two-source ones are `shufps`, the only one SSE2
     /// offers (hence the casts), which takes its low lanes from one source and its high lanes from
     /// the other.
+    #[inline]
     pub(crate) fn kb_mul4(lhs: [u32; 4], rhs: [u32; 4]) -> [u32; 4] {
         // SAFETY: SSE2 is part of the x86-64 baseline, so the intrinsics are always available, and
         // the arrays are 16 bytes, the size of a `__m128i`, while the unaligned load and store have
@@ -530,7 +620,32 @@ mod x86_64 {
         }
     }
 
+    /// SSE2 version of [`super::scalar::kb_mul4x1`].
+    ///
+    /// `_mm_mul_epu32` multiplies lanes 0 and 2, so the even coefficients are multiplied by `rhs`
+    /// in place and the odd ones after a shift down; the two pairs of products are reduced with
+    /// [`reduce_partially`], gathered back into `(c0, c1, c2, c3)` (the odd ones shifted up into
+    /// the zeroed high halves of the even ones), and corrected with a single [`subtract_modulus`].
+    #[inline]
+    pub(crate) fn kb_mul4x1(lhs: [u32; 4], rhs: u32) -> [u32; 4] {
+        // SAFETY: SSE2 is part of the x86-64 baseline, so the intrinsics are always available, and
+        // the arrays are 16 bytes, the size of a `__m128i`, while the unaligned load and store have
+        // no alignment requirement.
+        unsafe {
+            let lhs = _mm_loadu_si128(lhs.as_ptr().cast());
+            let rhs = _mm_set1_epi32(rhs as i32);
+            let even = reduce_partially(_mm_mul_epu32(lhs, rhs));
+            let odd = reduce_partially(_mm_mul_epu32(_mm_srli_epi64::<32>(lhs), rhs));
+            let gathered = _mm_or_si128(even, _mm_slli_epi64::<32>(odd));
+            let reduced = subtract_modulus(gathered, _mm_set1_epi32(MODULUS as i32));
+            let mut out = [0u32; 4];
+            _mm_storeu_si128(out.as_mut_ptr().cast(), reduced);
+            out
+        }
+    }
+
     /// SSE2 version of [`super::scalar::kb_add8`].
+    #[inline]
     pub(crate) fn kb_add8(lhs: [u32; 8], rhs: [u32; 8]) -> [u32; 8] {
         let [a0, a1, a2, a3, a4, a5, a6, a7] = lhs;
         let [b0, b1, b2, b3, b4, b5, b6, b7] = rhs;
@@ -540,6 +655,7 @@ mod x86_64 {
     }
 
     /// SSE2 version of [`super::scalar::kb_sub8`].
+    #[inline]
     pub(crate) fn kb_sub8(lhs: [u32; 8], rhs: [u32; 8]) -> [u32; 8] {
         let [a0, a1, a2, a3, a4, a5, a6, a7] = lhs;
         let [b0, b1, b2, b3, b4, b5, b6, b7] = rhs;
@@ -552,6 +668,7 @@ mod x86_64 {
     ///
     /// The same Karatsuba over [`kb_mul4`], [`kb_add4`] and [`kb_sub4`], so the three KoalaBear^4
     /// multiplications and the combining steps all run the SSE2 code above.
+    #[inline]
     pub(crate) fn kb_mul8(lhs: [u32; 8], rhs: [u32; 8]) -> [u32; 8] {
         const { assert!(QUADRATIC_NON_RESIDUE == 3) }
         let [a0, a1, a2, a3, a4, a5, a6, a7] = lhs;
@@ -566,6 +683,17 @@ mod x86_64 {
         let acy = [ac2, ac3, ac1, kb_add(kb_add(ac0, ac0), ac0)];
         let [c0, c1, c2, c3] = kb_sub4(kb_sub4(s, ac), bd);
         let [c4, c5, c6, c7] = kb_add4(bd, acy);
+        [c0, c1, c2, c3, c4, c5, c6, c7]
+    }
+
+    /// SSE2 version of [`super::scalar::kb_mul8x1`].
+    ///
+    /// Eight coefficients are two full 128-bit registers, so this is [`kb_mul4x1`] on each half.
+    #[inline]
+    pub(crate) fn kb_mul8x1(lhs: [u32; 8], rhs: u32) -> [u32; 8] {
+        let [a0, a1, a2, a3, a4, a5, a6, a7] = lhs;
+        let [c0, c1, c2, c3] = kb_mul4x1([a0, a1, a2, a3], rhs);
+        let [c4, c5, c6, c7] = kb_mul4x1([a4, a5, a6, a7], rhs);
         [c0, c1, c2, c3, c4, c5, c6, c7]
     }
 }
@@ -593,6 +721,7 @@ mod wasm32 {
     /// constant splat it folds the widening into a constant of 64-bit lanes, leaving an `i64x2.mul`
     /// that engines expand into three 32x32->64 multiplications on x86-64. The volatile load keeps
     /// the modulus a vector value; it costs a single load from a fixed address.
+    #[inline]
     fn modulus_splat() -> v128 {
         // SAFETY: `MODULUS_SPLAT` is 16 bytes and 16-byte aligned, ie. exactly a `v128`.
         unsafe { core::ptr::read_volatile(MODULUS_SPLAT.0.as_ptr().cast::<v128>()) }
@@ -601,6 +730,7 @@ mod wasm32 {
     /// Adds `lhs` and `rhs` lane by lane: the conditional subtraction of `MODULUS` is an unsigned
     /// minimum, since when the subtraction should not happen it wraps around to a value that loses
     /// the comparison.
+    #[inline]
     fn add(lhs: v128, rhs: v128) -> v128 {
         let sum = u32x4_add(lhs, rhs);
         u32x4_min(sum, u32x4_sub(sum, u32x4_splat(MODULUS)))
@@ -609,12 +739,14 @@ mod wasm32 {
     /// Subtracts `rhs` from `lhs` lane by lane: the conditional addition of `MODULUS` is an
     /// unsigned minimum, since a difference that borrows wraps around to a large value, and adding
     /// `MODULUS` wraps it back to the correct, smaller one.
+    #[inline]
     fn sub(lhs: v128, rhs: v128) -> v128 {
         let difference = u32x4_sub(lhs, rhs);
         u32x4_min(difference, u32x4_add(difference, u32x4_splat(MODULUS)))
     }
 
     /// Multiplies every lane by `QUADRATIC_NON_RESIDUE`, ie. two additions.
+    #[inline]
     fn triple(value: v128) -> v128 {
         const { assert!(QUADRATIC_NON_RESIDUE == 3) }
         add(add(value, value), value)
@@ -622,6 +754,7 @@ mod wasm32 {
 
     /// WebAssembly SIMD version of [`super::scalar::kb_add2`]: the two coefficients are added in
     /// 32-bit lanes 0 and 1 by [`add`].
+    #[inline]
     pub(crate) fn kb_add2(lhs: [u32; 2], rhs: [u32; 2]) -> [u32; 2] {
         let [a0, a1] = lhs;
         let [b0, b1] = rhs;
@@ -633,6 +766,7 @@ mod wasm32 {
 
     /// WebAssembly SIMD version of [`super::scalar::kb_sub2`]: the two coefficients are subtracted
     /// in 32-bit lanes 0 and 1 by [`sub`].
+    #[inline]
     pub(crate) fn kb_sub2(lhs: [u32; 2], rhs: [u32; 2]) -> [u32; 2] {
         let [a0, a1] = lhs;
         let [b0, b1] = rhs;
@@ -643,18 +777,30 @@ mod wasm32 {
     }
 
     /// Montgomery-reduces both 64-bit lanes of `sum`, each of which must be lower than
-    /// `MODULUS * 2^32`, leaving the results in the low 32-bit halves of the lanes (ie. 32-bit
-    /// lanes 0 and 2) with zeroed high halves.
+    /// `MODULUS * 2^32`, leaving results lower than `2 * MODULUS` (rather than `MODULUS`) in the
+    /// low 32-bit halves of the lanes (ie. 32-bit lanes 0 and 2) with zeroed high halves.
     ///
     /// The low words of the 64-bit lanes are the 32-bit lanes 0 and 2, so the factors computed by
     /// the 32-bit multiplication are gathered from there before the widening multiplication by
-    /// `MODULUS`. The result of the reduction is lower than `2 * MODULUS`, so a single
-    /// [`add`]-style conditional subtraction is enough; on the zeroed high halves it is a no-op.
-    fn reduce(sum: v128) -> v128 {
+    /// `MODULUS`. The final conditional subtraction is left to the caller so that the results of
+    /// several reductions can be gathered into one vector and corrected all at once.
+    #[inline]
+    fn reduce_partially(sum: v128) -> v128 {
         let factor = u32x4_mul(sum, u32x4_splat(P_INV));
         let factor = u32x4_shuffle::<0, 2, 0, 2>(factor, factor);
         let product = u64x2_extmul_low_u32x4(factor, modulus_splat());
-        let reduced = u64x2_shr(u64x2_add(sum, product), 32);
+        u64x2_shr(u64x2_add(sum, product), 32)
+    }
+
+    /// Montgomery-reduces both 64-bit lanes of `sum`, each of which must be lower than
+    /// `MODULUS * 2^32`, leaving the results in the low 32-bit halves of the lanes (ie. 32-bit
+    /// lanes 0 and 2) with zeroed high halves.
+    ///
+    /// This is [`reduce_partially`] followed by the single [`add`]-style conditional subtraction
+    /// its results need; on the zeroed high halves it is a no-op.
+    #[inline]
+    fn reduce(sum: v128) -> v128 {
+        let reduced = reduce_partially(sum);
         u32x4_min(reduced, u32x4_sub(reduced, u32x4_splat(MODULUS)))
     }
 
@@ -674,6 +820,7 @@ mod wasm32 {
     /// multiplication is the high half of a vector. Scaling the product instead of the coefficient,
     /// as the scalar and SSE2 versions do, would make one operand of every multiplication a pair
     /// of equal lanes, which LLVM turns into a splat and thereby breaks the same way.
+    #[inline]
     pub(crate) fn kb_mul2(lhs: [u32; 2], rhs: [u32; 2]) -> [u32; 2] {
         let [a0, a1] = lhs;
         let [b0, b1] = rhs;
@@ -694,8 +841,21 @@ mod wasm32 {
         [c0, c1]
     }
 
+    /// WebAssembly SIMD version of [`super::scalar::kb_mul2x1`]: the two coefficients are
+    /// multiplied by `rhs` in a single widening multiplication and reduced at once.
+    #[inline]
+    pub(crate) fn kb_mul2x1(lhs: [u32; 2], rhs: u32) -> [u32; 2] {
+        let [a0, a1] = lhs;
+        let products = u64x2_extmul_low_u32x4(u32x4(a0, a1, 0, 0), u32x4_splat(rhs));
+        let reduced = reduce(products);
+        let c0 = u32x4_extract_lane::<0>(reduced);
+        let c1 = u32x4_extract_lane::<2>(reduced);
+        [c0, c1]
+    }
+
     /// WebAssembly SIMD version of [`super::scalar::kb_add4`]: the four coefficients occupy a full
     /// `v128`, one per lane, so this is a single [`add`].
+    #[inline]
     pub(crate) fn kb_add4(lhs: [u32; 4], rhs: [u32; 4]) -> [u32; 4] {
         let [a0, a1, a2, a3] = lhs;
         let [b0, b1, b2, b3] = rhs;
@@ -709,6 +869,7 @@ mod wasm32 {
 
     /// WebAssembly SIMD version of [`super::scalar::kb_sub4`]: the four coefficients occupy a full
     /// `v128`, one per lane, so this is a single [`sub`].
+    #[inline]
     pub(crate) fn kb_sub4(lhs: [u32; 4], rhs: [u32; 4]) -> [u32; 4] {
         let [a0, a1, a2, a3] = lhs;
         let [b0, b1, b2, b3] = rhs;
@@ -728,6 +889,7 @@ mod wasm32 {
     /// word that is not lower than it (the usual unsigned minimum, with zeros in the low words so
     /// that they are left untouched), ie. `MODULUS * 2^32` from the 64-bit lane, which doesn't
     /// change its residue and brings it into the domain of [`reduce`].
+    #[inline]
     fn reduce_wide(sum: v128) -> v128 {
         let modulus_high = u32x4(0, MODULUS, 0, MODULUS);
         reduce(u32x4_min(sum, u32x4_sub(sum, modulus_high)))
@@ -749,6 +911,7 @@ mod wasm32 {
     /// half of `plain`, `tripled` or `rhs`; see [`kb_mul2`] for why that and the vector
     /// additions matter. LLVM still merges the shuffles of two of the rounds in a way that
     /// loses two of the eight `extmul`s to `i64x2.mul`, which no pairing avoids.
+    #[inline]
     pub(crate) fn kb_mul4(lhs: [u32; 4], rhs: [u32; 4]) -> [u32; 4] {
         let [a0, a1, a2, a3] = lhs;
         let [b0, b1, b2, b3] = rhs;
@@ -798,9 +961,31 @@ mod wasm32 {
         out
     }
 
+    /// WebAssembly SIMD version of [`super::scalar::kb_mul4x1`].
+    ///
+    /// The low and high widening multiplications by `rhs` yield the products of the first and
+    /// last two coefficients; the two pairs are reduced with [`reduce_partially`], gathered back
+    /// into `(c0, c1, c2, c3)`, and corrected with a single unsigned minimum.
+    #[inline]
+    pub(crate) fn kb_mul4x1(lhs: [u32; 4], rhs: u32) -> [u32; 4] {
+        let [a0, a1, a2, a3] = lhs;
+        let lhs = u32x4(a0, a1, a2, a3);
+        let rhs = u32x4_splat(rhs);
+        let low = reduce_partially(u64x2_extmul_low_u32x4(lhs, rhs));
+        let high = reduce_partially(u64x2_extmul_high_u32x4(lhs, rhs));
+        let gathered = u32x4_shuffle::<0, 2, 4, 6>(low, high);
+        let reduced = u32x4_min(gathered, u32x4_sub(gathered, u32x4_splat(MODULUS)));
+        let mut out = [0u32; 4];
+        // SAFETY: `out` is 16 bytes, the same size as a `v128`, and WebAssembly's `v128.store`
+        // has no alignment requirement.
+        unsafe { v128_store(out.as_mut_ptr().cast(), reduced) };
+        out
+    }
+
     /// WebAssembly SIMD version of [`super::scalar::kb_add8`].
     ///
     /// Eight coefficients are two full `v128` lane vectors, so this is [`kb_add4`] on each half.
+    #[inline]
     pub(crate) fn kb_add8(lhs: [u32; 8], rhs: [u32; 8]) -> [u32; 8] {
         let [a0, a1, a2, a3, a4, a5, a6, a7] = lhs;
         let [b0, b1, b2, b3, b4, b5, b6, b7] = rhs;
@@ -812,6 +997,7 @@ mod wasm32 {
     /// WebAssembly SIMD version of [`super::scalar::kb_sub8`].
     ///
     /// Eight coefficients are two full `v128` lane vectors, so this is [`kb_sub4`] on each half.
+    #[inline]
     pub(crate) fn kb_sub8(lhs: [u32; 8], rhs: [u32; 8]) -> [u32; 8] {
         let [a0, a1, a2, a3, a4, a5, a6, a7] = lhs;
         let [b0, b1, b2, b3, b4, b5, b6, b7] = rhs;
@@ -824,6 +1010,7 @@ mod wasm32 {
     ///
     /// The same Karatsuba over [`kb_mul4`], [`kb_add4`] and [`kb_sub4`], so the three KoalaBear^4
     /// multiplications and the combining steps all run the SIMD code above.
+    #[inline]
     pub(crate) fn kb_mul8(lhs: [u32; 8], rhs: [u32; 8]) -> [u32; 8] {
         const { assert!(QUADRATIC_NON_RESIDUE == 3) }
         let [a0, a1, a2, a3, a4, a5, a6, a7] = lhs;
@@ -840,16 +1027,29 @@ mod wasm32 {
         let [c4, c5, c6, c7] = kb_add4(bd, acy);
         [c0, c1, c2, c3, c4, c5, c6, c7]
     }
+
+    /// WebAssembly SIMD version of [`super::scalar::kb_mul8x1`].
+    ///
+    /// Eight coefficients are two full `v128` lane vectors, so this is [`kb_mul4x1`] on each half.
+    #[inline]
+    pub(crate) fn kb_mul8x1(lhs: [u32; 8], rhs: u32) -> [u32; 8] {
+        let [a0, a1, a2, a3, a4, a5, a6, a7] = lhs;
+        let [c0, c1, c2, c3] = kb_mul4x1([a0, a1, a2, a3], rhs);
+        let [c4, c5, c6, c7] = kb_mul4x1([a4, a5, a6, a7], rhs);
+        [c0, c1, c2, c3, c4, c5, c6, c7]
+    }
 }
 
 #[cfg(target_arch = "x86_64")]
 pub(crate) use x86_64::{
-    kb_add2, kb_add4, kb_add8, kb_mul2, kb_mul4, kb_mul8, kb_sub2, kb_sub4, kb_sub8,
+    kb_add2, kb_add4, kb_add8, kb_mul2, kb_mul2x1, kb_mul4, kb_mul4x1, kb_mul8, kb_mul8x1, kb_sub2,
+    kb_sub4, kb_sub8,
 };
 
 #[cfg(all(target_arch = "wasm32", target_feature = "simd128"))]
 pub(crate) use wasm32::{
-    kb_add2, kb_add4, kb_add8, kb_mul2, kb_mul4, kb_mul8, kb_sub2, kb_sub4, kb_sub8,
+    kb_add2, kb_add4, kb_add8, kb_mul2, kb_mul2x1, kb_mul4, kb_mul4x1, kb_mul8, kb_mul8x1, kb_sub2,
+    kb_sub4, kb_sub8,
 };
 
 #[cfg(not(any(
@@ -857,7 +1057,8 @@ pub(crate) use wasm32::{
     all(target_arch = "wasm32", target_feature = "simd128")
 )))]
 pub(crate) use scalar::{
-    kb_add2, kb_add4, kb_add8, kb_mul2, kb_mul4, kb_mul8, kb_sub2, kb_sub4, kb_sub8,
+    kb_add2, kb_add4, kb_add8, kb_mul2, kb_mul2x1, kb_mul4, kb_mul4x1, kb_mul8, kb_mul8x1, kb_sub2,
+    kb_sub4, kb_sub8,
 };
 
 #[cfg(test)]
@@ -1488,6 +1689,69 @@ mod tests {
         );
     }
 
+    fn test_scalar_mul2x1_impl(lhs: [u32; 2], rhs: u32) {
+        let lhs_montgomery = lhs.map(kb_to_montgomery);
+        let rhs_montgomery = kb_to_montgomery(rhs);
+        let product = scalar::kb_mul2x1(lhs_montgomery, rhs_montgomery);
+        assert!(product.iter().all(|&coefficient| coefficient < MODULUS));
+        assert_eq!(
+            product.map(kb_from_montgomery),
+            lhs.map(|coefficient| reference_mul(coefficient, rhs))
+        );
+        assert_eq!(
+            scalar::kb_mul2(lhs_montgomery, [0, rhs_montgomery]),
+            product
+        );
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    fn test_mul2x1_impl(lhs: [u32; 2], rhs: u32) {
+        let lhs_montgomery = lhs.map(kb_to_montgomery);
+        let rhs_montgomery = kb_to_montgomery(rhs);
+        let product = x86_64::kb_mul2x1(lhs_montgomery, rhs_montgomery);
+        assert!(product.iter().all(|&coefficient| coefficient < MODULUS));
+        assert_eq!(
+            product.map(kb_from_montgomery),
+            lhs.map(|coefficient| reference_mul(coefficient, rhs))
+        );
+        assert_eq!(
+            x86_64::kb_mul2(lhs_montgomery, [0, rhs_montgomery]),
+            product
+        );
+    }
+
+    #[cfg(all(target_arch = "wasm32", target_feature = "simd128"))]
+    fn test_mul2x1_impl(lhs: [u32; 2], rhs: u32) {
+        let lhs_montgomery = lhs.map(kb_to_montgomery);
+        let rhs_montgomery = kb_to_montgomery(rhs);
+        let product = wasm32::kb_mul2x1(lhs_montgomery, rhs_montgomery);
+        assert!(product.iter().all(|&coefficient| coefficient < MODULUS));
+        assert_eq!(
+            product.map(kb_from_montgomery),
+            lhs.map(|coefficient| reference_mul(coefficient, rhs))
+        );
+        assert_eq!(
+            wasm32::kb_mul2(lhs_montgomery, [0, rhs_montgomery]),
+            product
+        );
+    }
+
+    #[cfg(not(any(
+        target_arch = "x86_64",
+        all(target_arch = "wasm32", target_feature = "simd128")
+    )))]
+    fn test_mul2x1_impl(_lhs: [u32; 2], _rhs: u32) {}
+
+    #[test]
+    fn test_mul2x1() {
+        for lhs in TEST_SCALARS_2 {
+            for rhs in TEST_SCALARS {
+                test_scalar_mul2x1_impl(lhs, rhs);
+                test_mul2x1_impl(lhs, rhs);
+            }
+        }
+    }
+
     /// Checks [`scalar::kb_mul4`] on `lhs` and `rhs` against the reference multiplication, against
     /// Karatsuba over `kb_mul2`, and against the multiplicative identity.
     fn test_scalar_mul4_impl(lhs: [u32; 4], rhs: [u32; 4]) {
@@ -1564,6 +1828,69 @@ mod tests {
         );
     }
 
+    fn test_scalar_mul4x1_impl(lhs: [u32; 4], rhs: u32) {
+        let lhs_montgomery = lhs.map(kb_to_montgomery);
+        let rhs_montgomery = kb_to_montgomery(rhs);
+        let product = scalar::kb_mul4x1(lhs_montgomery, rhs_montgomery);
+        assert!(product.iter().all(|&coefficient| coefficient < MODULUS));
+        assert_eq!(
+            product.map(kb_from_montgomery),
+            lhs.map(|coefficient| reference_mul(coefficient, rhs))
+        );
+        assert_eq!(
+            scalar::kb_mul4(lhs_montgomery, [0, 0, 0, rhs_montgomery]),
+            product
+        );
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    fn test_mul4x1_impl(lhs: [u32; 4], rhs: u32) {
+        let lhs_montgomery = lhs.map(kb_to_montgomery);
+        let rhs_montgomery = kb_to_montgomery(rhs);
+        let product = x86_64::kb_mul4x1(lhs_montgomery, rhs_montgomery);
+        assert!(product.iter().all(|&coefficient| coefficient < MODULUS));
+        assert_eq!(
+            product.map(kb_from_montgomery),
+            lhs.map(|coefficient| reference_mul(coefficient, rhs))
+        );
+        assert_eq!(
+            x86_64::kb_mul4(lhs_montgomery, [0, 0, 0, rhs_montgomery]),
+            product
+        );
+    }
+
+    #[cfg(all(target_arch = "wasm32", target_feature = "simd128"))]
+    fn test_mul4x1_impl(lhs: [u32; 4], rhs: u32) {
+        let lhs_montgomery = lhs.map(kb_to_montgomery);
+        let rhs_montgomery = kb_to_montgomery(rhs);
+        let product = wasm32::kb_mul4x1(lhs_montgomery, rhs_montgomery);
+        assert!(product.iter().all(|&coefficient| coefficient < MODULUS));
+        assert_eq!(
+            product.map(kb_from_montgomery),
+            lhs.map(|coefficient| reference_mul(coefficient, rhs))
+        );
+        assert_eq!(
+            wasm32::kb_mul4(lhs_montgomery, [0, 0, 0, rhs_montgomery]),
+            product
+        );
+    }
+
+    #[cfg(not(any(
+        target_arch = "x86_64",
+        all(target_arch = "wasm32", target_feature = "simd128")
+    )))]
+    fn test_mul4x1_impl(_lhs: [u32; 4], _rhs: u32) {}
+
+    #[test]
+    fn test_mul4x1() {
+        for lhs in TEST_SCALARS_4 {
+            for rhs in TEST_SCALARS {
+                test_scalar_mul4x1_impl(lhs, rhs);
+                test_mul4x1_impl(lhs, rhs);
+            }
+        }
+    }
+
     fn test_scalar_mul8_impl(lhs: [u32; 8], rhs: [u32; 8]) {
         let one = kb_to_montgomery(1);
         let lhs_montgomery = lhs.map(kb_to_montgomery);
@@ -1638,5 +1965,68 @@ mod tests {
             kb_mul8(x, x),
             [0, 0, 0, 0, 0, 0, 0, QUADRATIC_NON_RESIDUE].map(kb_to_montgomery)
         );
+    }
+
+    fn test_scalar_mul8x1_impl(lhs: [u32; 8], rhs: u32) {
+        let lhs_montgomery = lhs.map(kb_to_montgomery);
+        let rhs_montgomery = kb_to_montgomery(rhs);
+        let product = scalar::kb_mul8x1(lhs_montgomery, rhs_montgomery);
+        assert!(product.iter().all(|&coefficient| coefficient < MODULUS));
+        assert_eq!(
+            product.map(kb_from_montgomery),
+            lhs.map(|coefficient| reference_mul(coefficient, rhs))
+        );
+        assert_eq!(
+            scalar::kb_mul8(lhs_montgomery, [0, 0, 0, 0, 0, 0, 0, rhs_montgomery]),
+            product
+        );
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    fn test_mul8x1_impl(lhs: [u32; 8], rhs: u32) {
+        let lhs_montgomery = lhs.map(kb_to_montgomery);
+        let rhs_montgomery = kb_to_montgomery(rhs);
+        let product = x86_64::kb_mul8x1(lhs_montgomery, rhs_montgomery);
+        assert!(product.iter().all(|&coefficient| coefficient < MODULUS));
+        assert_eq!(
+            product.map(kb_from_montgomery),
+            lhs.map(|coefficient| reference_mul(coefficient, rhs))
+        );
+        assert_eq!(
+            x86_64::kb_mul8(lhs_montgomery, [0, 0, 0, 0, 0, 0, 0, rhs_montgomery]),
+            product
+        );
+    }
+
+    #[cfg(all(target_arch = "wasm32", target_feature = "simd128"))]
+    fn test_mul8x1_impl(lhs: [u32; 8], rhs: u32) {
+        let lhs_montgomery = lhs.map(kb_to_montgomery);
+        let rhs_montgomery = kb_to_montgomery(rhs);
+        let product = wasm32::kb_mul8x1(lhs_montgomery, rhs_montgomery);
+        assert!(product.iter().all(|&coefficient| coefficient < MODULUS));
+        assert_eq!(
+            product.map(kb_from_montgomery),
+            lhs.map(|coefficient| reference_mul(coefficient, rhs))
+        );
+        assert_eq!(
+            wasm32::kb_mul8(lhs_montgomery, [0, 0, 0, 0, 0, 0, 0, rhs_montgomery]),
+            product
+        );
+    }
+
+    #[cfg(not(any(
+        target_arch = "x86_64",
+        all(target_arch = "wasm32", target_feature = "simd128")
+    )))]
+    fn test_mul8x1_impl(_lhs: [u32; 8], _rhs: u32) {}
+
+    #[test]
+    fn test_mul8x1() {
+        for lhs in TEST_SCALARS_8 {
+            for rhs in TEST_SCALARS {
+                test_scalar_mul8x1_impl(lhs, rhs);
+                test_mul8x1_impl(lhs, rhs);
+            }
+        }
     }
 }

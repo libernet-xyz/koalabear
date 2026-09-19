@@ -1,7 +1,7 @@
 use crate::base;
 use crate::helpers::{
     CHARACTERS_LOWER_CASE, CHARACTERS_UPPER_CASE, MODULUS, QUADRATIC_NON_RESIDUE, kb_add, kb_add4,
-    kb_from_montgomery, kb_mul, kb_mul2, kb_mul4, kb_sub, kb_sub4, kb_to_montgomery,
+    kb_from_montgomery, kb_mul2, kb_mul4, kb_mul4x1, kb_sub, kb_sub4, kb_to_montgomery,
 };
 use crate::kb2;
 use crate::kb8;
@@ -440,12 +440,8 @@ impl Mul<base::Scalar> for Scalar {
     type Output = Scalar;
 
     fn mul(self, rhs: base::Scalar) -> Self::Output {
-        Self(
-            kb_mul(self.0, rhs.0),
-            kb_mul(self.1, rhs.0),
-            kb_mul(self.2, rhs.0),
-            kb_mul(self.3, rhs.0),
-        )
+        let [c0, c1, c2, c3] = kb_mul4x1([self.0, self.1, self.2, self.3], rhs.0);
+        Self(c0, c1, c2, c3)
     }
 }
 
@@ -459,10 +455,7 @@ impl<'a> Mul<&'a base::Scalar> for Scalar {
 
 impl MulAssign<base::Scalar> for Scalar {
     fn mul_assign(&mut self, rhs: base::Scalar) {
-        self.0 = kb_mul(self.0, rhs.0);
-        self.1 = kb_mul(self.1, rhs.0);
-        self.2 = kb_mul(self.2, rhs.0);
-        self.3 = kb_mul(self.3, rhs.0);
+        [self.0, self.1, self.2, self.3] = kb_mul4x1([self.0, self.1, self.2, self.3], rhs.0);
     }
 }
 
