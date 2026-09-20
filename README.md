@@ -13,6 +13,8 @@ The order of the field is the prime $p = 2^{31} - 2^{24} + 1$, or `0x7F000001`.
 This crate provides not only the base KoalaBear field but also the extension fields KoalaBear^2,
 KoalaBear^4, and KoalaBear^8.
 
+## Hardware Acceleration
+
 Most operations in this crate are accelerated with SIMD when compiling to **x86-64** or
 **WebAssembly**, but they rely on plain Rust code for all other compilation targets. Furthermore,
 SIMD support is not always present in WebAssembly and it's disabled by default in the Rust

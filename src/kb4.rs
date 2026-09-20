@@ -773,6 +773,8 @@ impl TryFrom<U256> for Scalar {
 }
 
 impl Field for Scalar {
+    type BaseField = base::Scalar;
+
     const MODULUS: &'static str = "0xf817e017d05fc017a060001fc000001";
 
     const CHARACTERISTIC: &'static str = "0x7f000001";
