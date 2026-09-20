@@ -568,6 +568,8 @@ impl TryFrom<U256> for Scalar {
 }
 
 impl Field for Scalar {
+    type BaseField = Self;
+
     const MODULUS: &'static str = "0x7f000001";
 
     const CHARACTERISTIC: &'static str = "0x7f000001";
