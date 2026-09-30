@@ -85,6 +85,54 @@ impl Scalar {
         Self::from_raw(value)
     }
 
+    /// Constructs a KoalaBear^4 scalar from its [base field](`base::Scalar`) components.
+    ///
+    /// The four components are provided in little-endian order.
+    #[inline]
+    pub const fn from_le_base(components: [base::Scalar; 4]) -> Self {
+        Self(
+            components[3].0,
+            components[2].0,
+            components[1].0,
+            components[0].0,
+        )
+    }
+
+    /// Returns the base field components of this scalar in little-endian order.
+    #[inline]
+    pub const fn to_le_base(&self) -> [base::Scalar; 4] {
+        [
+            base::Scalar(self.3),
+            base::Scalar(self.2),
+            base::Scalar(self.1),
+            base::Scalar(self.0),
+        ]
+    }
+
+    /// Constructs a KoalaBear^4 scalar from its [base field](`base::Scalar`) components.
+    ///
+    /// The four components are provided in big-endian order.
+    #[inline]
+    pub const fn from_be_base(components: [base::Scalar; 4]) -> Self {
+        Self(
+            components[0].0,
+            components[1].0,
+            components[2].0,
+            components[3].0,
+        )
+    }
+
+    /// Returns the base field components of this scalar in big-endian order.
+    #[inline]
+    pub const fn to_be_base(&self) -> [base::Scalar; 4] {
+        [
+            base::Scalar(self.0),
+            base::Scalar(self.1),
+            base::Scalar(self.2),
+            base::Scalar(self.3),
+        ]
+    }
+
     /// Constructs a scalar from its numeric value, flagging it as invalid if the value is not lower
     /// than `MODULUS^4`.
     fn try_from_value(value: u128) -> CtOption<Self> {
@@ -1078,6 +1126,114 @@ mod tests {
     #[should_panic(expected = "invalid KoalaBear value")]
     fn test_from_coefficients_out_of_range() {
         from_coefficients(MODULUS, 0, 0, 0);
+    }
+
+    #[test]
+    fn test_from_le_base() {
+        assert_eq!(Scalar::from_le_base([base::Scalar::ZERO; 4]), Scalar::ZERO);
+        assert_eq!(
+            Scalar::from_le_base([
+                base::Scalar::ONE,
+                base::Scalar::ZERO,
+                base::Scalar::ZERO,
+                base::Scalar::ZERO,
+            ]),
+            Scalar::ONE
+        );
+        assert_eq!(
+            Scalar::from_le_base([
+                base::Scalar::from_const(12),
+                base::Scalar::from_const(34),
+                base::Scalar::from_const(56),
+                base::Scalar::from_const(78),
+            ]),
+            from_coefficients(78, 56, 34, 12)
+        );
+        assert_eq!(
+            Scalar::from_le_base([base::Scalar::from_const(MODULUS - 1); 4]),
+            Scalar::MAX
+        );
+    }
+
+    #[test]
+    fn test_to_le_base() {
+        assert_eq!(Scalar::ZERO.to_le_base(), [base::Scalar::ZERO; 4]);
+        assert_eq!(
+            Scalar::ONE.to_le_base(),
+            [
+                base::Scalar::ONE,
+                base::Scalar::ZERO,
+                base::Scalar::ZERO,
+                base::Scalar::ZERO,
+            ]
+        );
+        assert_eq!(
+            from_coefficients(12, 34, 56, 78).to_le_base(),
+            [
+                base::Scalar::from_const(78),
+                base::Scalar::from_const(56),
+                base::Scalar::from_const(34),
+                base::Scalar::from_const(12),
+            ]
+        );
+        assert_eq!(
+            Scalar::MAX.to_le_base(),
+            [base::Scalar::from_const(MODULUS - 1); 4]
+        );
+    }
+
+    #[test]
+    fn test_from_be_base() {
+        assert_eq!(Scalar::from_be_base([base::Scalar::ZERO; 4]), Scalar::ZERO);
+        assert_eq!(
+            Scalar::from_be_base([
+                base::Scalar::ZERO,
+                base::Scalar::ZERO,
+                base::Scalar::ZERO,
+                base::Scalar::ONE,
+            ]),
+            Scalar::ONE
+        );
+        assert_eq!(
+            Scalar::from_be_base([
+                base::Scalar::from_const(78),
+                base::Scalar::from_const(56),
+                base::Scalar::from_const(34),
+                base::Scalar::from_const(12),
+            ]),
+            from_coefficients(78, 56, 34, 12)
+        );
+        assert_eq!(
+            Scalar::from_be_base([base::Scalar::from_const(MODULUS - 1); 4]),
+            Scalar::MAX
+        );
+    }
+
+    #[test]
+    fn test_to_be_base() {
+        assert_eq!(Scalar::ZERO.to_be_base(), [base::Scalar::ZERO; 4]);
+        assert_eq!(
+            Scalar::ONE.to_be_base(),
+            [
+                base::Scalar::ZERO,
+                base::Scalar::ZERO,
+                base::Scalar::ZERO,
+                base::Scalar::ONE,
+            ]
+        );
+        assert_eq!(
+            from_coefficients(12, 34, 56, 78).to_be_base(),
+            [
+                base::Scalar::from_const(12),
+                base::Scalar::from_const(34),
+                base::Scalar::from_const(56),
+                base::Scalar::from_const(78),
+            ]
+        );
+        assert_eq!(
+            Scalar::MAX.to_be_base(),
+            [base::Scalar::from_const(MODULUS - 1); 4]
+        );
     }
 
     #[test]
