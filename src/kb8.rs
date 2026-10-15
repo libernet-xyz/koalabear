@@ -940,7 +940,7 @@ impl Field for Scalar {
 
     const CHARACTERISTIC: &'static str = "0x7f000001";
 
-    const LEN: usize = 32;
+    const LEN: usize = 31;
 
     const NUM_BITS: usize = 248;
 
