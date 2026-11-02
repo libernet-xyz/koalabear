@@ -415,9 +415,9 @@ checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
 name = "starkom-ff"
-version = "4.2.1"
+version = "5.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6176a9c66ff55f408d18c4e73e927ce34238507e5c72b6da47ed3f5d7d416490"
+checksum = "7dd1aa8cf87ac8c37b61dbfbb28bc86f2d7ae4292c3396eeefea0b04ed9fd8a0"
 dependencies = [
  "anyhow",
  "getrandom 0.2.17",
@@ -429,7 +429,7 @@ dependencies = [
 
 [[package]]
 name = "starkom-koalabear"
-version = "1.4.1"
+version = "2.0.0"
 dependencies = [
  "anyhow",
  "getrandom 0.4.3",
